@@ -175,17 +175,13 @@ void read_adc(void)
 	UBat_ui = (unsigned int)(switch_adc(0)*70)/36;
 	IBat_si = (signed int)(switch_adc(7));
 
-	/* Filter of voltage value												 */ 
-	UBatF_ui = (UBatF_ui 
-			  * ((uint8_t)Var[Variant_uc].ParaName.P_VOLTAGE_FILTER_ui - 1)
-			  + UBat_ui)
-			  / (uint8_t)Var[Variant_uc].ParaName.P_VOLTAGE_FILTER_ui;
+	// Filter of voltage value
+	#define VOLTAGE_FILTER 3
+	UBatF_ui=(UBatF_ui*(VOLTAGE_FILTER-1)+UBat_ui)/VOLTAGE_FILTER;
 
-	/* Filter of current value												 */
-	IBatF_si = (signed int)(IBatF_si 
-			  * ((uint8_t)Var[Variant_uc].ParaName.P_CURRENT_FILTER_ui - 1) 
-			  + IBat_si) 
-			  / (uint8_t)Var[Variant_uc].ParaName.P_CURRENT_FILTER_ui;
+	// Filter of current value
+	#define CURRENT_FILTER 8
+	IBatF_si=(signed int)(IBatF_si*(CURRENT_FILTER-1)+IBat_si)/CURRENT_FILTER;
 	
 
 	/* Filter current signal												 */
@@ -213,6 +209,6 @@ void read_adc(void)
 	/* Activation of Buzzer due to undervoltage								 */
 	if(UBat_ui < (Cells_uc * Var[Variant_uc].ParaName.P_ACCU_EMPTY_VOLTAGE_ui))  
 	{
-		Buzzer(3,Short);
+		Buzzer(1,Long);
 	}
 }

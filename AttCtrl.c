@@ -106,6 +106,11 @@ static unsigned char Stick_Pitch_neutral_uc;
 static unsigned char Stick_Roll_neutral_uc;
 static unsigned char Stick_Pitch_not_neutral_uc;
 static unsigned char Stick_Roll_not_neutral_uc;
+signed long temp_throttle_sl = 0;
+signed long temp_pitch_sl = 0;
+signed long temp_roll_sl = 0;
+signed long temp_yaw_sl = 0;
+signed long temp_motor_sl = 0;
 
 
 /*****************************************************************************/
@@ -265,6 +270,9 @@ void AttCtrl_CalcCtrlOutp(void)
 	/*************************************************************************/
 	/*                       Calculate P- and D-portion                      */
 	/*************************************************************************/
+	
+	//#define PCmpnt_LIMIT 100
+	//#define DCmpnt_LIMIT 75
 
 	/* --------------------------- Rollaxle -------------------------------- */
 
@@ -273,9 +281,12 @@ void AttCtrl_CalcCtrlOutp(void)
 		(
 			FPL_muls16x16_32_
 			(
-				InternSig.ErrorRoll_si, (Poti.P_KP_ROLL_PITCH_ui << 2)
+				InternSig.ErrorRoll_si, (Poti.P_KP_ROLL_PITCH_ui << 3)
 			)
 		);
+	//limit P-portion
+	//BOUND(InternSig.PCmpntRoll_si,PCmpnt_LIMIT,-PCmpnt_LIMIT);
+
 
 	InternSig.DCmpntRoll_si	= 
 		FPL_ROUND_OFF_16_
@@ -285,6 +296,8 @@ void AttCtrl_CalcCtrlOutp(void)
 				- InternSig.ErrorRollRate_si, (Poti.P_KD_ROLL_PITCH_ui << 3)
 			)
 		);
+	//limit D-portion
+	//BOUND(InternSig.DCmpntRoll_si,DCmpnt_LIMIT,-DCmpnt_LIMIT);
 
 	/* --------------------------- Pitchaxle ------------------------------- */
 
@@ -293,9 +306,12 @@ void AttCtrl_CalcCtrlOutp(void)
 		(
 			FPL_muls16x16_32_
 			(
-				InternSig.ErrorPitch_si, (Poti.P_KP_ROLL_PITCH_ui << 2)
+				InternSig.ErrorPitch_si, (Poti.P_KP_ROLL_PITCH_ui << 3)
 			)
 		);
+	//limit P-portion
+	//BOUND(InternSig.PCmpntPitch_si,PCmpnt_LIMIT,-PCmpnt_LIMIT);
+
 
 	InternSig.DCmpntPitch_si = 
 		FPL_ROUND_OFF_16_
@@ -305,6 +321,8 @@ void AttCtrl_CalcCtrlOutp(void)
 				- InternSig.ErrorPitchRate_si, (Poti.P_KD_ROLL_PITCH_ui << 3)
 			)
 		);
+	//limit D-portion
+	//BOUND(InternSig.DCmpntPitch_si,DCmpnt_LIMIT,-DCmpnt_LIMIT);
 
 	/* ----------------------------- Yawaxle ------------------------------- */
 
@@ -313,7 +331,7 @@ void AttCtrl_CalcCtrlOutp(void)
 		(
 			FPL_muls16x16_32_
 			(
-				InternSig.ErrorYaw_si, (Poti.P_KP_YAW_ui << 1)
+				InternSig.ErrorYaw_si, (Poti.P_KP_YAW_ui << 2)
 			)
 		);
 
@@ -322,7 +340,7 @@ void AttCtrl_CalcCtrlOutp(void)
 		(
 			FPL_muls16x16_32_
 			(
-				- InternSig.ErrorYawRate_si, (Poti.P_KD_YAW_ui << 2)
+				- InternSig.ErrorYawRate_si, (Poti.P_KD_YAW_ui << 3)
 			)
 		);
 	
@@ -452,7 +470,7 @@ void AttCtrl_CalcCtrlOutp(void)
       	}
 
 	/*************************************************************************/
-	/*               	  	   Compute control output     	                 */
+	/*             Compute control output: sum of P+D    	                 */
 	/*************************************************************************/
 
 	OutpSig.Roll_si = InternSig.PCmpntRoll_si + InternSig.DCmpntRoll_si
@@ -503,7 +521,6 @@ void AttCtrl_CalcCtrlOutp(void)
 /*****************************************************************************/
 void AttCtrl_ExecMotorMixer(void)
 {
-	static uint16_t count = 0; /* War vorher lokal deklariert => Kein Effekt */
 	uint8_t counter_uc=0;
 
 	if (MotorsOn_uc == 1)
@@ -547,31 +564,7 @@ void AttCtrl_ExecMotorMixer(void)
 			/*       				  AttCtrl active                         */
 			/*****************************************************************/
 
-			LED_YELLOW_ON; //YYY
-	
-			/* if battery is complete empty and crash is not avoidable,		 */
-			/* reduce motor revolution --> SQ still stable during fast		 */
-			/* descent --> "controled crash"								 */
-
-			if(UBatF_ui < (uint8_t)Var[Variant_uc].ParaName.
-				P_ACCU_EMPTY_MOTOR_REDUCTION_ui)
-			{
-				count++;
-				/* Due to 3ms task, 666 = 2s								 */
-				if(count >= 666)
-				{
-					/* P_MIN_GAS_REGELUNG_AKTIV_uc added as offset to avoid  */
-					/* deactivation of attitude control						 */
-					Stick_Throttle_ui = (uint8_t)Var[Variant_uc].ParaName.
-							P_EMER_THRO_ACCU_EMPTY_ui + (uint8_t)Var[Variant_uc].
-							ParaName.P_MIN_THRO_CONTROLLER_ACTIVE_ui;
-				}
-			}
-			else
-			{
-				count = 0;
-			}
-			//*****************
+			LED_YELLOW_ON;
 
 			/*****************************************************************/
 			/*  Precalculation of motor target values out of radio signals   */
@@ -663,38 +656,46 @@ void AttCtrl_ExecMotorMixer(void)
 				Stick_Gas_Comp_ui = 0;
 			}
 
+
 			/*****************************************************************/
-			/* Mapping of pilot, attitude, altitude control and GPS target	 */
-			/* values on motor target values								 */
+			/* Mapping of pilot, attitude, altitude and GPS commands to the	 */
+			/* motor values													 */
 			/*****************************************************************/
-			
-			/* GPS values */
-			OutpSig.Pitch_GPS_si = OutpSig.Pitch_si + (GPS_Pitch_si >> 1);
-			OutpSig.Roll_GPS_si = OutpSig.Roll_si + (GPS_Roll_si >> 1);
+
+			//calc the pitch, roll and yaw sum once, because they are needed
+			//several times
+			temp_throttle_sl = OutpSig.Throttle_si + Stick_Gas_Comp_ui + Stick_Throttle_ui;
+			temp_pitch_sl = OutpSig.Pitch_si + CmdPitch_si + (GPS_Pitch_si >> 1);
+			temp_roll_sl = OutpSig.Roll_si + CmdRoll_si + (GPS_Roll_si >> 1);
+			temp_yaw_sl = OutpSig.Yaw_si + CmdYaw_si;
 
 			for(counter_uc=0;counter_uc<P_MaxMotorAmount;counter_uc++)
 			{
-				OutpSig.Motor_si[counter_uc] = OutpSig.Throttle_si
-						+ Stick_Gas_Comp_ui
-						+ ((int32_t)(((int32_t)OutpSig.Yaw_si * MotorGain.FMY_sc[counter_uc])
-						+ ((int32_t)OutpSig.Pitch_GPS_si * MotorGain.FMP_sc[counter_uc])
-						+ ((int32_t)OutpSig.Roll_GPS_si * MotorGain.FMR_sc[counter_uc])
-						+ (Stick_Throttle_ui * MotorGain.FMT_sc[counter_uc])
-						+ (CmdYaw_si * MotorGain.FMY_sc[counter_uc])
-						+ (CmdPitch_si * MotorGain.FMP_sc[counter_uc])
-						+ (CmdRoll_si * MotorGain.FMR_sc[counter_uc]))>>5); 
-			}
+					temp_motor_sl  = temp_throttle_sl * MotorGain.FMT_sc[counter_uc];
+					temp_motor_sl += temp_pitch_sl * MotorGain.FMP_sc[counter_uc];
+					temp_motor_sl += temp_roll_sl * MotorGain.FMR_sc[counter_uc];
+					temp_motor_sl += temp_yaw_sl * MotorGain.FMY_sc[counter_uc];
+				
+				//divide by 32, due to MotorGain factors.
+				temp_motor_sl = temp_motor_sl>>5;
+				
+				//"brake" motor in case of lower target rpm compared to the last cycle
+				if(temp_motor_sl < OutpSig.Motor_K1_si[counter_uc])
+				{
+					OutpSig.Motor_si[counter_uc] = (temp_motor_sl * 6)>>3; //*0,75
+				}
+				else
+				{
+					OutpSig.Motor_si[counter_uc] = temp_motor_sl;	
+				}				
+	
+				OutpSig.Motor_K1_si[counter_uc]	= temp_motor_sl;
 
-			/*****************************************************************/
-			/* Clipping of final motor target values 						 */
-			/* (P_MIN_GAS_uc ... P_MAX_GAS_uc)								 */
-			/*****************************************************************/
-			for(counter_uc=0;counter_uc<P_MaxMotorAmount;counter_uc++)
-			{
+				//limit the final motor values to MAX_THRO and MIN_THRO
 				BOUND(OutpSig.Motor_si[counter_uc], 
 					(uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui, 
 					(uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui);
 			}
 		}
-	}	
+	}
 }

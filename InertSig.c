@@ -79,7 +79,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "communication.h"
 #include "AttCtrl.h"
 #include "InertSig.h"
-#include "libsensoren.h"
 
 /*****************************************************************************/
 /*                             type-declarations                             */
@@ -279,18 +278,12 @@ void InertSig_CalibOffsets(void)
 /*****************************************************************************/
 inline void InertSig_PollAndPreprocess(void)
 {
-
+	uint8_t byte0_uc, byte1_uc, byte2_uc, byte3_uc;
 	uint8_t ChIx = 0;
 
 	/* --------------------------------------------------------------------- */
 	/* read and precalculate of ACC sensor signals (Offset- and Sensitivity) */
 	/* --------------------------------------------------------------------- */
-
-	/* --------------------------------------------------------------------- */
-	/* Activate the sensors													 */
-	/* --------------------------------------------------------------------- */
-	LibActivateSensors();
-
 
         OffsCorrValPtr_si = (int16_t *)&Eeprom_CalDataSecOffsCorr.OffsAccX_si;
 
@@ -355,7 +348,7 @@ inline void InertSig_PollAndPreprocess(void)
 		    SigVal16_si = InertSig_Acc.AccRaw_si[ChIx] - OffsCorrValPtr_si[ChIx];
 		    InertSig_Acc.Acc_si[ChIx] = SigVal16_si;
 
-                }
+            }
 
 	/* --------------------------------------------------------------------- */
 	/* broadcast to all sensore to store the act. value in the output buffer */
@@ -381,7 +374,26 @@ inline void InertSig_PollAndPreprocess(void)
 
 	for (ChIx = 0; ChIx < 3; ChIx++)
 	{
-		SigVal16_si = LibAccRate(ChIx);
+    	SPI_SENS_CS_LOW;
+
+		/* only the first three received bytes containing the signal values  */
+
+		/* Bit 4 ... 0: RD_DATA-Instr. = 0x12, Bit 7 .. 5: (TYP Cadr1 Cadr0) */
+		/*(TYP tells the type of sensor element (1:SMB, 0:SMG), (Cadr1,Cadr0)*/
+		/* stands for the 2 Bit long Chip ID, which is configured by the     */
+		/* two hardware inputs (ID1 , ID0) of the sensor elements.           */
+
+		byte0_uc = SPI_SENS_TransferByte(0x92 | (ChIx << 5));
+    	byte1_uc = SPI_SENS_TransferByte(0x00);
+    	byte2_uc = SPI_SENS_TransferByte(0x00);
+		SPI_SENS_TransferByte(0x00);
+		SPI_SENS_TransferByte(0x02);
+
+		SPI_SENS_CS_HIGH;
+
+		SigVal16_si =
+			((int16_t)byte0_uc << 14) | ((int16_t)byte1_uc << 6) |
+			 (byte2_uc >> 2);
 
 		InertSig_Acc.AccRaw_si[ChIx] = SigVal16_si;
 
@@ -403,8 +415,20 @@ inline void InertSig_PollAndPreprocess(void)
 
 	for (ChIx = 0; ChIx < 3; ChIx++)
 	{
- 
- 		SigVal16_si = LibYawRate(ChIx);
+    	SPI_SENS_CS_LOW;		
+		
+		/* The first four received bytes containing the signal values        */
+		byte0_uc = SPI_SENS_TransferByte(0x12 | (ChIx << 5));
+    	byte1_uc = SPI_SENS_TransferByte(0x00);
+    	byte2_uc = SPI_SENS_TransferByte(0x00);  	
+		byte3_uc = SPI_SENS_TransferByte(0x00);    	
+		SPI_SENS_TransferByte(0x02);		
+		
+		SPI_SENS_CS_HIGH;
+
+		SigVal16_si =
+			((int16_t)byte0_uc << 14) | ((int16_t)byte1_uc << 6) | 
+			 (byte2_uc >> 2);
 
 		InertSig_Gyro.RateRaw_si[ChIx] = SigVal16_si;
 
@@ -466,7 +490,7 @@ inline void InertSig_PollAndPreprocess(void)
     	/* Rate2k is delayed by one task (= 3 ms)							 */
 		/* (Output Low pass of the ASIC delayed due to the group runtime	 */
 		/* of the Rate-signal compared to the Rate2kHz-signal)               */
-    	InertSig_Gyro.Rate2kRaw_sc[ChIx] = LibYawRate2K();
+    	InertSig_Gyro.Rate2kRaw_sc[ChIx] = (byte2_uc << 6) | (byte3_uc >> 2);
 	}
 
 	/* --------------------------------------------------------------------- */

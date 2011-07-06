@@ -80,13 +80,13 @@ POSSIBILITY OF SUCH DAMAGE.
 // mainboard SW version
 //*****************************************************************************
 #define SW_MAJOR	5
-#define SW_MINOR	9
+#define SW_MINOR	11
 
 //*****************************************************************************
 // mainboard EEPROM version
 //*****************************************************************************
 #define EE_MAJOR	1
-#define EE_MINOR	5
+#define EE_MINOR	8
 
 //*****************************************************************************
 // global defines
@@ -170,9 +170,9 @@ factor for modification of the controller target roll/pitch angles
 via radio control.#
 */
 //UNIT:			#-#
-//DEFAULT:		#0#
+//DEFAULT:		#60#
 //MIN:			#0#
-//MAX:			#20#
+//MAX:			#75#
 /*---------------------------------------------------------------------------*/
 unsigned int P_FACTOR_STICK_ROPI_DIRECT_ui;
 /*DESCRIPTION:
@@ -183,7 +183,7 @@ ENGLISH:
 factor for direct influence of the motor rpm via radio control roll/pitch.#
 */
 //UNIT:			#-#
-//DEFAULT:		#112#
+//DEFAULT:		#0#
 //MIN:			#0#
 //MAX:			#200#
 /*---------------------------------------------------------------------------*/
@@ -273,44 +273,6 @@ Stick Roll value, below the P-part of the controller is enabled again.#
 //MIN:			#10#
 //MAX:			#40#
 /*---------------------------------------------------------------------------*/
-unsigned int P_ACCU_EMPTY_MOTOR_REDUCTION_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Akkuspannung ab der die Motoren auf P_EMER_THRO_ACCU_EMPTY_uc +
-P_MIN_THRO_CONT_ACT_uc reduziert werden.
-ENGLISH:
-accu voltage to reduce the motor rmp to P_EMER_THRO_ACCU_EMPTY_uc +
-P_MIN_THRO_CONT_ACT_uc.#
-*/
-//UNIT:			#V/100#
-//DEFAULT:		#0#
-//MIN:			#0#
-//MAX:			#100#
-/*---------------------------------------------------------------------------*/
-unsigned int P_EMER_THRO_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-!!!WIRD NICHT MEHR VERWENDET!!!
-ENGLISH:
-!!!NOT USED ANY MORE!!!#
-*/
-//UNIT:			#-#
-//DEFAULT:		#90#
-//MIN:			#50#
-//MAX:			#175#
-/*---------------------------------------------------------------------------*/
-unsigned int P_EMER_THRO_ACCU_EMPTY_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Notgas wenn Akku absolut leer ist.
-ENGLISH:
-emergency throttle in case of completely empty accu.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#66#
-//MIN:			#10#
-//MAX:			#120#
-/*---------------------------------------------------------------------------*/
 unsigned int P_EMER_THRO_DURATION_ui;
 /*DESCRIPTION:
 #DEUTSCH:
@@ -322,18 +284,6 @@ duration for emergency throttle.#
 //DEFAULT:		#2500#
 //MIN:			#500#
 //MAX:			#50000#
-/*---------------------------------------------------------------------------*/
-unsigned int P_YAW_LIMIT_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-!!!WIRD NICHT MEHR VERWENDET!!!
-ENGLISH:
-!!!NOT USED ANY MORE!!!#
-*/
-//UNIT:			#-#
-//DEFAULT:		#0#
-//MIN:			#0#
-//MAX:			#50#
 /*---------------------------------------------------------------------------*/
 unsigned int P_MIN_THRO_ui;
 /*DESCRIPTION:
@@ -395,30 +345,6 @@ accu valtage per cell at which the accu is recognised as empty.#
 //MIN:			#300#
 //MAX:			#400#
 /*---------------------------------------------------------------------------*/
-unsigned int P_CURRENT_FILTER_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Filtertiefe des Stromsensors.
-ENGLISH:
-filter coefficient of current sensor.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#8#
-//MIN:			#2#
-//MAX:			#20#
-/*---------------------------------------------------------------------------*/
-unsigned int P_VOLTAGE_FILTER_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Filtertiefe der Spannungsmessung.
-ENGLISH:
-filter coefficient of voltage measurement.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#3#
-//MIN:			#2#
-//MAX:			#20#
-/*---------------------------------------------------------------------------*/
 unsigned int P_KP_ROLL_PITCH_ui;
 /*DESCRIPTION:
 #DEUTSCH:
@@ -427,7 +353,7 @@ ENGLISH:
 P-Gain Roll / Pitch of attitude controller.#
 */
 //UNIT:			#-#
-//DEFAULT:		#175#
+//DEFAULT:		#128#
 //MIN:			#0#
 //MAX:			#255#
 /*---------------------------------------------------------------------------*/
@@ -439,7 +365,7 @@ ENGLISH:
 D-Gain Roll / Pitch of attitude controller.#
 */
 //UNIT:			#-#
-//DEFAULT:	  	#100#
+//DEFAULT:	  	#155#
 //MIN:			#0#
 //MAX:			#255#
 /*---------------------------------------------------------------------------*/
@@ -451,7 +377,7 @@ ENGLISH:
 P-Gain Yaw of attitude controller.#
 */
 //UNIT:			#-#
-//DEFAULT:		#200#
+//DEFAULT:		#128#
 //MIN:			#0#
 //MAX:			#255#
 /*---------------------------------------------------------------------------*/
@@ -463,21 +389,9 @@ ENGLISH:
 D-Gain Yaw of attitude controller.#
 */
 //UNIT:			#-#
-//DEFAULT:		#138#
+//DEFAULT:		#100#
 //MIN:			#0#
 //MAX:			#255#
-/*---------------------------------------------------------------------------*/
-unsigned int P_RADIO_FILTER_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Filtertiefe für Funke Eingangssignale.
-ENGLISH:
-filter coefficient of radio signals.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#3#
-//MIN:			#2#
-//MAX:			#10#
 /*---------------------------------------------------------------------------*/
 unsigned int P_CAMERACOMP_ON_OFF_ui;
 /*DESCRIPTION:

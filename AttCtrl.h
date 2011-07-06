@@ -113,11 +113,9 @@ typedef struct
     int16_t Throttle_si;		/* Throttle control-output value			 */
     int16_t Roll_si;			/* Roll-control-output value				 */
     int16_t Pitch_si;			/* Pitch-control-output value				 */
-    int16_t Yaw_si;				/* Yaw-control-output value					 */
-	int16_t Roll_GPS_si;		/* Roll-control-output value + GPSRoll		 */
-	int16_t Pitch_GPS_si;		/* Pitch-control-output value + GPSPitch	 */   
+    int16_t Yaw_si;				/* Yaw-control-output value					 */   
     int16_t Motor_si[8];		/* Target value for motor					 */
-	int16_t Motor_NoYaw_si[8];	/* Target value for motor without yaw portion*/
+	int16_t Motor_K1_si[8];		/* Target value for motor from last cycle	 */
 }
 AttCtrlType_OutpSig;
 

@@ -433,8 +433,8 @@ void Parameter_init(void)
 	for(iVarCnt=0; iVarCnt<P_MaxVariant; iVarCnt++)
 	{
 		Var[iVarCnt].ParaName.P_STICK_HEADINGHOLD_THRESHOLD_ui=3;
-		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_CONTROLLER_ui=0;
-		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_DIRECT_ui =112;
+		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_CONTROLLER_ui=60;
+		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_DIRECT_ui =0;
 		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_HEADINGHOLD_ui =77;
 		Var[iVarCnt].ParaName.P_FACTOR_STICK_YAW_DIRECT_ui =90;
 		Var[iVarCnt].ParaName.P_STICK_YAW_THRESHOLD_ui =6; 
@@ -442,26 +442,19 @@ void Parameter_init(void)
 		Var[iVarCnt].ParaName.P_LOOP_PITCH_OFF_HYST_ui =30;
 		Var[iVarCnt].ParaName.P_LOOP_ROLL_ON_THRESHOLD_ui =90;
 		Var[iVarCnt].ParaName.P_LOOP_ROLL_OFF_HYST_ui =30;
-		Var[iVarCnt].ParaName.P_ACCU_EMPTY_MOTOR_REDUCTION_ui =0;
-		Var[iVarCnt].ParaName.P_EMER_THRO_ui =90;
-		Var[iVarCnt].ParaName.P_EMER_THRO_ACCU_EMPTY_ui =66;
 		Var[iVarCnt].ParaName.P_EMER_THRO_DURATION_ui =2500;
-		Var[iVarCnt].ParaName.P_YAW_LIMIT_ui =0;
 		Var[iVarCnt].ParaName.P_MIN_THRO_ui =15;
 		Var[iVarCnt].ParaName.P_MAX_THRO_ui =255;
 		Var[iVarCnt].ParaName.P_MAX_THRO_STICK_ui =240;		
 		Var[iVarCnt].ParaName.P_MIN_THRO_CONTROLLER_ACTIVE_ui =8;
 		Var[iVarCnt].ParaName.P_ACCU_EMPTY_VOLTAGE_ui =320;
-		Var[iVarCnt].ParaName.P_CURRENT_FILTER_ui =8;
-		Var[iVarCnt].ParaName.P_VOLTAGE_FILTER_ui=3;
-		Var[iVarCnt].ParaName.P_KP_ROLL_PITCH_ui=175;
-		Var[iVarCnt].ParaName.P_KD_ROLL_PITCH_ui=100;
-		Var[iVarCnt].ParaName.P_KP_YAW_ui=200;
-		Var[iVarCnt].ParaName.P_KD_YAW_ui=138;
-		Var[iVarCnt].ParaName.P_RADIO_FILTER_ui=3;
+		Var[iVarCnt].ParaName.P_KP_ROLL_PITCH_ui=128;
+		Var[iVarCnt].ParaName.P_KD_ROLL_PITCH_ui=155;
+		Var[iVarCnt].ParaName.P_KP_YAW_ui=128;
+		Var[iVarCnt].ParaName.P_KD_YAW_ui=100;
 		Var[iVarCnt].ParaName.P_CAMERACOMP_ON_OFF_ui=0;
-		Var[iVarCnt].ParaName.P_CAMERAPITCHCOMP_ON_OFF_ui=200;
-		Var[iVarCnt].ParaName.P_CAMERAROLLCOMP_ON_OFF_ui=200;
+		Var[iVarCnt].ParaName.P_CAMERAPITCHCOMP_ON_OFF_ui=0;
+		Var[iVarCnt].ParaName.P_CAMERAROLLCOMP_ON_OFF_ui=0;
 		Var[iVarCnt].ParaName.P_CAMERAPITCHCOMP_GAIN_ui=187;
 		Var[iVarCnt].ParaName.P_CAMERAPITCHCOMP_OFFSET_ui=127;
 		Var[iVarCnt].ParaName.P_CAMERAROLLCOMP_GAIN_ui=187;
@@ -972,11 +965,24 @@ void tasktimer(void)
 		Est_Hov_Throttle();
 		Poti_2_Param();
 		Power_Output();
-		Buzzer(0,0);
+		Buzzer(0,0); //call Buzzer routine
+
 		//delay counter after booting to avoid emergency buzzer due to
 		//necessary spektrum binding
 		if(BootDelay_uc < 250) BootDelay_uc++;
-
+		
+		if(BootDelay_uc == 30)
+		{
+			//Show recognised number of cells once after boot
+			if(Cells_uc == 3)
+			{
+				Buzzer(3,Long);	//(3x long)
+			}
+			else if(Cells_uc == 4)
+			{
+				Buzzer(4,Long);	//(4x long)
+			}
+		}
 	}
 	/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 }
@@ -1049,16 +1055,6 @@ int main(void)
 		if(UBatF_ui>1270) Cells_uc = 4;
 		else Cells_uc = 3;
 	}
-
-	//Tell user I am ready and show recognised number of cells after startup
-	if(Cells_uc == 3)
-	{
-		Buzzer(3,Long);	//(3x long)
-	}
-	else if(Cells_uc == 4)
-	{
-		Buzzer(4,Long);	//(4x long)
-	}
 	//*************************************************************	
 
 	while (1)
@@ -1076,7 +1072,7 @@ int main(void)
 /*		 Buzzer from EXO activated?										 */
 		if(Buzzer_uc == 1)
 		{
-			Buzzer(2,Short);
+			Buzzer(1,Short);
 			Buzzer_uc = 0;
 		}
 

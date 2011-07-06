@@ -222,7 +222,7 @@ void Radio_Init(void)
 /* channels																	 */
 /*****************************************************************************/
 /* FUNCTION_PARAMETERS:														 */
-/* P_RADIO_FILTER_ui														 */
+/*																			 */
 /*****************************************************************************/
 ISR(TIMER1_CAPT_vect)
 {
@@ -271,12 +271,10 @@ ISR(TIMER1_CAPT_vect)
 
 		//assign counter to according radio channel and filter signal.
 		//adjust the filter with parameter P_FunkeFilter
-		RadioChannelRaw_si[index_uc] = (signed int)((RadioChannelRaw_si[index_uc] 
-									  * ((unsigned char)Var[Variant_uc].
-									  		ParaName.P_RADIO_FILTER_ui - 1))
-									  + PPM_time_si - 432) 
-									  / (uint8_t)Var[Variant_uc].
-									  		ParaName.P_RADIO_FILTER_ui;
+		#define RADIO_FILTER 3
+		RadioChannelRaw_si[index_uc]
+			=(signed int)((RadioChannelRaw_si[index_uc]*(RADIO_FILTER - 1))
+												+PPM_time_si-432)/RADIO_FILTER;
 		index_uc++;
 	}
 	
@@ -350,7 +348,7 @@ void Radio_Signal_Check(void)
 		Stick_Pitch_si = 0;
 		Stick_Roll_si = 0;
 		Stick_Yaw_si = 0;
-		if (SensOffsCount_ui == 0 && BootDelay_uc >= 50) Buzzer(0,ContinousOn);
+		if(SensOffsCount_ui == 0 && BootDelay_uc >= 60) Buzzer(0,ContinousOn);
 		
 		//6ms task, therefore: 65535 = 6,5535 min.
 		EmergLandTime_ui ++;
@@ -472,7 +470,8 @@ void Radio_Stick_Check(void)
 				/* valid EEPROM data										 */
 				for(counter_uc=0;counter_uc<P_MaxMotorAmount;counter_uc++)
 				{
-			    	OutpSig.Motor_si[counter_uc] = (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui;
+			    	OutpSig.Motor_si[counter_uc] = (uint8_t)Var[Variant_uc]
+														.ParaName.P_MIN_THRO_ui;
 				}
  			    MotorsOn_uc = 1;
             }
@@ -601,7 +600,7 @@ void Radio_Channel_Calib(void)
 						 - OffsFunke_Kanal_si[index_uc]
 						< Min_Radio_Channel_si[index_uc])
 					{
-						 Min_Radio_Channel_si[index_uc] = RadioChannelRaw_si[index_uc]
+						Min_Radio_Channel_si[index_uc] = RadioChannelRaw_si[index_uc]
 						 								 - OffsFunke_Kanal_si[index_uc];
 					}
 
@@ -609,7 +608,7 @@ void Radio_Channel_Calib(void)
 						 - OffsFunke_Kanal_si[index_uc]
 						> Max_Radio_Channel_si[index_uc])
 					{
-						 Max_Radio_Channel_si[index_uc] = RadioChannelRaw_si[index_uc]
+						Max_Radio_Channel_si[index_uc] = RadioChannelRaw_si[index_uc]
 						 								 - OffsFunke_Kanal_si[index_uc];
 					}
 				}
@@ -759,13 +758,17 @@ void Servo_Output(void)
 
 	//Servo Signal = (((Value * 1.125)+Offset)+minValue);
 	//Sample for Servo 1
-	//ServoExt.ServoOut_ui[0]=((Value1+(Value1>>3)+ServoExt.ServoOutOffset_si[0])+ServoExt.ServoOutMin_ui[0]);
+	//ServoExt.ServoOut_ui[0]=((Value1+(Value1>>3)
+				//+ServoExt.ServoOutOffset_si[0])+ServoExt.ServoOutMin_ui[0]);
 	//Sample for Servo 2
-	//ServoExt.ServoOut_ui[1]=((Value2+(Value2>>3)+ServoExt.ServoOutOffset_si[1])+ServoExt.ServoOutMin_ui[1]);
+	//ServoExt.ServoOut_ui[1]=((Value2+(Value2>>3)
+				//+ServoExt.ServoOutOffset_si[1])+ServoExt.ServoOutMin_ui[1]);
 	//Sample for Servo 3
-	//ServoExt.ServoOut_ui[2]=((Value3+(Value3>>3)+ServoExt.ServoOutOffset_si[2])+ServoExt.ServoOutMin_ui[2]);
+	//ServoExt.ServoOut_ui[2]=((Value3+(Value3>>3)
+				//+ServoExt.ServoOutOffset_si[2])+ServoExt.ServoOutMin_ui[2]);
 	//Sample for Servo 4
-	//ServoExt.ServoOut_ui[3]=((Value4+(Value4>>3)+ServoExt.ServoOutOffset_si[3])+ServoExt.ServoOutMin_ui[3]);
+	//ServoExt.ServoOut_ui[3]=((Value4+(Value4>>3)
+				//+ServoExt.ServoOutOffset_si[3])+ServoExt.ServoOutMin_ui[3]);
 
 
 #endif
