@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -814,8 +837,8 @@ void InertSig_GetAndProcessSignals(void)
 	/* and convert into 24.8 format										     */
 	/* --------------------------------------------------------------------- */
 
-	if (FPL_ABS_16_(IS__PHI_Y_16) < IS__PHI_Y_MAX_GYRO_COMP && !LoopActiv_uc 
-		&& !RollActiv_uc && Var[Variant_uc].ParaName.FS_HEADING_HOLD_ui == 0)
+	if (FPL_ABS_16_(IS__PHI_Y_16) < IS__PHI_Y_MAX_GYRO_COMP && Var[Variant_uc].
+											ParaName.FS_HEADING_HOLD_ui == 0)
 	{
 		InertSig_CompensateGyroSignals();
 	}

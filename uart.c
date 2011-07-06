@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -94,7 +117,13 @@ POSSIBILITY OF SUCH DAMAGE.
 /*****************************************************************************/
 unsigned char Receive_Char_uc = 0;
 unsigned char SendData_uc = 0;
+unsigned char EXOTransfer_uc = 0;
+unsigned char EXOResponse_uc = 0;
+unsigned char EXOTransferState_uc = 1;
+unsigned char RxCounter_Tar_uc = 0;
+unsigned char SizeReceived_uc = 0;
 
+	//has to be initialized with 1 for dummy.
 
 /*****************************************************************************/
 /*                             local variables                               */
@@ -238,10 +267,6 @@ SIGNAL(USART0_RX_vect)
 {
 	Receive_Char_uc = UDR0;	
 	
-	
-	static unsigned char RxCounter_Tar_uc = 0;
-	//has to be initialized with 1 for dummy.
-
 	static unsigned char RxCounter_Cur_uc = 1;
 	//index and value for checksum calculation.
 
@@ -428,6 +453,14 @@ SIGNAL(USART0_RX_vect)
 				//collect received bytes
 				RxData_uc = 20;
 			}
+			// Tunnel EXODATA
+			else if (Receive_Char_uc == 99)
+			{
+				//write id
+				UART_RX_TX_Data.Byte_uc[0]=99;
+				RxData_uc = 99;
+				SizeReceived_uc = FALSE;
+			}
 
  		}
 
@@ -464,10 +497,18 @@ SIGNAL(USART0_RX_vect)
 
 	else if (RxData_uc > 0)
 	{
+		if(RxData_uc==99 && SizeReceived_uc == FALSE) // Get Size
+		{
+			RxCounter_Tar_uc = (Receive_Char_uc+1); //Nutzdaten + CRC+Dummy
+			UART_RX_TX_Data.Byte_uc[RxCounter_Cur_uc]=Receive_Char_uc;
+			SizeReceived_uc = TRUE;
+		}
+		else
+		{
 		//increment Counter
 		RxCounter_Cur_uc++;
 		UART_RX_TX_Data.Byte_uc[RxCounter_Cur_uc]=Receive_Char_uc;
-
+		}
 		//all Data received ?
 		if(RxCounter_Tar_uc == RxCounter_Cur_uc)
 		{
@@ -490,6 +531,38 @@ SIGNAL(USART0_RX_vect)
 								ParaID[UART_RX_TX_Data.Int_ui[1]] = 
 									UART_RX_TX_Data.Int_ui[2];
 						}
+				}
+			}
+
+
+			/********************************************************************************************
+			Frame Format SPI 40 byte Nutzdaten + 1 byte id + 1 byte crc
+			Byte		1		2		3-31		32
+			Value		ID		Size	Nutzdaten	CRC
+			*//////////////////////////////////////////////////////////////////////////////////////////////
+
+			//receive data for EXO
+			if(RxData_uc==99)
+			{
+			
+				//calculate checksum of the received data
+				for (Index_uc=0; Index_uc<=(RxCounter_Tar_uc-1); Index_uc++) // Nutzdaten + ID + Size + CRC
+				{
+					CHK_Sum += UART_RX_TX_Data.Byte_uc[Index_uc];
+				}
+
+				EXOData.Byte_uc[0]=UART_RX_TX_Data.Byte_uc[2]; // Ohne ID und Size
+				EXOData.Byte_uc[1]=0;
+
+				for (Index_uc=0; Index_uc<=(RxCounter_Tar_uc); Index_uc++) // Nutzdaten umkopieren
+				{
+					EXOData.Byte_uc[Index_uc+2]=UART_RX_TX_Data.Byte_uc[Index_uc+3]; // Ohne ID und Size
+				}
+				// is checksum correct
+				
+				if(CHK_Sum == UART_RX_TX_Data.Byte_uc[RxCounter_Tar_uc])
+				{
+					EXOTransferState_uc = StartTransfer;
 				}
 			}
 
@@ -516,8 +589,7 @@ SIGNAL(USART0_RX_vect)
 							uart_write_int(UART_RX_TX_Data.Int_ui[1]);
 							//send parameter
 							uart_write_int(Var[(UART_RX_TX_Data.
-								Byte_uc[0]-60)].ParaID[UART_RX_TX_Data.
-																Int_ui[1]]);
+								Byte_uc[0]-60)].ParaID[UART_RX_TX_Data.Int_ui[1]]);
 
 							CHK_Sum =  UART_RX_TX_Data.Byte_uc[0];
 							CHK_Sum += UART_RX_TX_Data.Byte_uc[2];

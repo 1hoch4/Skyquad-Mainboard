@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -78,6 +101,7 @@ POSSIBILITY OF SUCH DAMAGE.
 /*                           macros and #defines                             */
 /*****************************************************************************/
 #define Standby 1
+#define StartTransfer 6
 #define ContinousOn 2
 #define ContinousOff 3
 #define Short 4
@@ -87,11 +111,15 @@ POSSIBILITY OF SUCH DAMAGE.
 #define Continous 9
 #define Off 0
 #define On 1
-
+#define Transfer 0
+#define Response 1
+#define EXOTransfer_ID 99
+#define EXOResponse_ID 98
 /*****************************************************************************/
 /*                             global variables                              */
 /*****************************************************************************/
 extern volatile SPI_Union SPI_EXO_Data;
+extern volatile SPI_Union EXOData;
 extern volatile UART_RX_TX_DataUnion UART_RX_TX_Data;
 extern unsigned char EXO_Connected_uc;
 extern unsigned int SPI_EXO_All_errors_ui;

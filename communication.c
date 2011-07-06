@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -95,12 +118,13 @@ POSSIBILITY OF SUCH DAMAGE.
 /*                             global variables                              */
 /*****************************************************************************/
 volatile SPI_Union SPI_EXO_Data;
+volatile SPI_Union EXOData;
 volatile UART_RX_TX_DataUnion UART_RX_TX_Data;
-unsigned int SPI_EXO_All_errors_ui = 0;
-unsigned char EXO_Connected_uc = 0;
+unsigned int SPI_EXO_All_errors_ui = 5;
+unsigned char EXO_Connected_uc = 0,StatusTransfer_uc=0;
 unsigned char BuzzerStateInt_uc = Standby,BuzzerStateIntSave_uc = Standby;
 unsigned char BuzzerLongState_uc=0,BuzzerShortState_uc=0,BuzzerAmountInt_uc=0;
-unsigned char OffTimer_uc = 0,OnTimer_uc=0;
+unsigned char OffTimer_uc = 0,OnTimer_uc=0,DataSize_uc=0;
 /*****************************************************************************/
 /*                             local variables                               */
 /*****************************************************************************/
@@ -181,10 +205,7 @@ void sendData(void)
 
 				case 2:
 					uart_write_int(i2c_error_ui);		//Unit:#-# Offset:#0# //Factor:#1# Divisor:#1# GraphMIN:#-10# GraphMAX:#200#
-					uart_write_int(LoopActiv_uc);		//Unit:#-# Offset:#0# //Factor:#1# Divisor:#1# GraphMIN:#0# GraphMAX:#1000#
-					uart_write_int(RollActiv_uc);		//Unit:#-# Offset:#0# //Factor:#1# Divisor:#1# GraphMIN:#0# GraphMAX:#1000#
 					uart_write_int(EstHovThr_ui);		//Unit:#-# Offset:#0# //Factor:#1# Divisor:#1# GraphMIN:#0# GraphMAX:#1000#
-
 					sendID_Counter++;
 				break;
 
@@ -329,15 +350,15 @@ void sendData(void)
 //#Dataset_END#
 
 //#Dataset_START#
-//Datasetname:#AttCtrl#
+//Datasetname:#AttitudeCtrl#
 			/* Dataset 6 is requested, transmit one Block each 3ms Task		 */
 			case 6:
 
 			switch (sendID_Counter)
 			{
 				case 0:
-					uart_write_int(CmdRoll_si);					//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
-					uart_write_int(CmdPitch_si);				//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
+					uart_write_int(InpSig.SetPointRoll_si);		//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
+					uart_write_int(InpSig.SetPointPitch_si);	//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
 					uart_write_int(CmdYaw_si);					//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
 
 					sendID_Counter++;
@@ -381,7 +402,7 @@ void sendData(void)
 
 
 //#Dataset_START#
-//Datasetname:#AltController#
+//Datasetname:#HeightCtrl#
 			/* Dataset 7 is requested, transmit one Block each 3ms Task		 */
 			case 7:
 
@@ -389,9 +410,9 @@ void sendData(void)
 			{
 				case 0:
 					uart_write_int(AltControllerActive_uc);		//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
-					uart_write_int(DAC_Value_ui);				//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
+					uart_write_int(DAC_Value_ui);				//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#20000# GraphMAX:#60000#
 					uart_write_int(Pressure_ui);				//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
-					uart_write_int(PressureF_ui);				//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#-400# GraphMAX:#600#
+					uart_write_int(PressureF_ui);				//Unit:#-# Offset:#0# Factor:#1# Divisor:#1# GraphMIN:#20000# GraphMAX:#60000#
 
 					sendID_Counter++;
 				break;
@@ -504,6 +525,7 @@ void sendData(void)
 				case 9:
 					uart_write_int(GPS_Pitch_si);			//Unit:#-# Offset:#0# //Factor:#1# Divisor:#1# GraphMIN:#0# GraphMAX:#1000#
 					uart_write_int(GPS_Roll_si);			//Unit:#-# Offset:#0# //Factor:#1# Divisor:#1# GraphMIN:#0# GraphMAX:#1000#
+					uart_write_long(GPS.altitude_sl);		//Unit:#m# Offset:#0# //Factor:#1# Divisor:#1000# GraphMIN:#0# GraphMAX:#1000#
 
 					sendID_Counter++;
 				break;
@@ -708,11 +730,11 @@ void EXO_DataTransfer(void)
 {
 	/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 	/* Message body:														 */
-	/* 32 byte reference data												 */
+	/* 40 byte reference data												 */
 	/* 1  byte ID															 */
 	/* 1  byte CRC															 */
 	/* -----------------------												 */
-	/* 34 byte total  centralised in UNION									 */
+	/* 42 byte total  centralised in UNION									 */
 	/* Please see "SPI_MAIN_EXO.xls" for more information YYY				 */
 	/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
@@ -721,7 +743,8 @@ void EXO_DataTransfer(void)
 	/* messages in "SPI_MAIN_EXO.xls"										 */
 	/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-	unsigned char Daten_OK_uc = 0;
+	unsigned char Daten_OK_uc = 0,Index_uc=0;
+
 
 	/*************************************************************************/
 	/* 								Send Data								 */
@@ -735,10 +758,61 @@ void EXO_DataTransfer(void)
 		{
 			SPI_EXO_error_uc = 0;
 		}
+
 	}
 	else
 	{
 		EXO_Connected_uc = 1;
+		if(EXOTransferState_uc == StartTransfer) //6
+		{
+			for (Index_uc=0; Index_uc<=41; Index_uc++)
+			{
+				SPI_EXO_Data.Byte_uc[Index_uc] = EXOData.Byte_uc[Index_uc];
+			}
+			EXOTransferState_uc = Transfer;
+			SPI_EXO_TransferUnion(EXOTransfer_ID);
+		}
+		else if(EXOTransferState_uc == Transfer) //0
+		{
+			if (SPI_EXO_TransferUnion(EXOResponse_ID) == TRUE) // Daten empfangen CRC ok
+			{
+								
+				for (Index_uc=0; Index_uc<=41; Index_uc++)
+				{
+					EXOData.Byte_uc[Index_uc] = SPI_EXO_Data.Byte_uc[Index_uc];
+				}
+				EXOTransferState_uc = Standby;
+				SPI_EXO_error_uc = 0;
+				DataSize_uc = EXOData.Byte_uc[1];
+				StatusTransfer_uc = EXOData.Byte_uc[39];
+
+				if(StatusTransfer_uc == 3) //Übertragungsfehler Richtung EXO
+				{
+					EXOTransferState_uc = StartTransfer; // Nochmal versuchen
+				}
+
+			//	uart_write_char(DataSize_uc);
+			//	uart_write_char(StatusTransfer_uc);
+
+						
+				if(StatusTransfer_uc == 2) // Daten zurück zum PC
+				{
+					for (Index_uc=0; Index_uc<=DataSize_uc; Index_uc++)
+					{
+						uart_write_char(EXOData.Byte_uc[Index_uc]); // Write Data back to PC
+					}
+				}
+			}
+			else
+			{
+				EXOTransferState_uc = StartTransfer; // Nochmal versuchen
+				SPI_EXO_error_uc++;
+				SPI_EXO_All_errors_ui++;
+			}
+
+		}
+		else // Normaler Transferbetrieb EXOTransferState_uc==1//Standby
+		{
 		switch (SPI_EXO_ID_Counter)
 		{
 			case 1:
@@ -751,6 +825,7 @@ void EXO_DataTransfer(void)
 				SPI_EXO_Data.Long_ul[3] = InertSig_Gyro.Phi_sl[0];
 				SPI_EXO_Data.Long_ul[4] = InertSig_Gyro.Phi_sl[1];
 				SPI_EXO_Data.Long_ul[5] = InertSig_Gyro.Phi_sl[2];
+				SPI_EXO_Data.Byte_uc[28] = Variant_uc;
 				SPI_EXO_Data.Int_ui[15] = InertSig_Acc.AccResultant_ui;
 				// High Speed Message
 				SPI_EXO_Data.Int_ui[16] = InertSig_Acc.AccFilt_si[0];
@@ -842,7 +917,14 @@ void EXO_DataTransfer(void)
 				SPI_EXO_ID_Counter = 1;
 
 			break;
+			
+			default:
+					SPI_EXO_error_uc++;
+					SPI_EXO_All_errors_ui++;
+
+			break;
 		} // END switch (SPI_EXO_ID_Counter)
+
 
 		/*********************************************************************/
 		/* 							  Recieve Data							 */
@@ -859,6 +941,7 @@ void EXO_DataTransfer(void)
 					/*************************************/
 					GPS_North_si = SPI_EXO_Data.Int_ui[2];
 					GPS_East_si = SPI_EXO_Data.Int_ui[3];
+					GPS.altitude_sl = SPI_EXO_Data.Long_ul[0];
 					Pos_Dev_Integ_North_sl = SPI_EXO_Data.Long_ul[2];
 					Pos_Dev_Integ_East_sl = SPI_EXO_Data.Long_ul[3];
 					Pos_Dev_North_sl = SPI_EXO_Data.Long_ul[4];
@@ -917,7 +1000,10 @@ void EXO_DataTransfer(void)
 					AltControllerThrottle_sc = SPI_EXO_Data.Byte_uc[38];
 					GPS_Pitch_si = SPI_EXO_Data.Int_ui[16];
 					GPS_Roll_si = SPI_EXO_Data.Int_ui[17];
-					//LED_BLAU_FLASH;
+
+					LED_BLUE_ON;
+					cnt_uc = 0;
+
 				break;
 
 				case 4:
@@ -927,7 +1013,7 @@ void EXO_DataTransfer(void)
 					MM3_AngleError_si = SPI_EXO_Data.Int_ui[2];
 					MM3_GyroCompass_ui = SPI_EXO_Data.Int_ui[3];
 					Heading2Target_sl = SPI_EXO_Data.Long_ul[0];
-					GPS.altitude_sl = SPI_EXO_Data.Long_ul[2];
+					GPS.velDown_sl = SPI_EXO_Data.Long_ul[2];
 					GPS.velNorth_sl = SPI_EXO_Data.Long_ul[3];
 					GPS.velEast_sl = SPI_EXO_Data.Long_ul[4];
 					GPS.heading_sl = SPI_EXO_Data.Long_ul[5];
@@ -966,6 +1052,7 @@ void EXO_DataTransfer(void)
 					GPS_Roll_si = SPI_EXO_Data.Int_ui[17];
 				break;
 			}
+			}	
 		} // END if (Daten_OK_uc)
 	} // END if (SPI_EXO_error_uc >= SPI_EXO_MAX_ERROR)
 }
@@ -995,18 +1082,18 @@ void Buzzer(unsigned char BuzzerAmount_uc,unsigned char BuzzerType_uc)
 		if(BuzzerType_uc == ContinousOn)
 		{
 			BuzzerStateInt_uc = Continous;
+			BuzzerStateIntSave_uc = Continous;
 			BuzzerPower_uc = 1;
 		}
 
 		else if(BuzzerType_uc == ContinousOff)
 		{
 			BuzzerStateInt_uc = Standby;
+			BuzzerStateIntSave_uc = Standby;
 			BuzzerPower_uc = 0;
 		}
-	}
-	if(BuzzerStateInt_uc == Standby)
-	{
-		if(BuzzerType_uc == Short)
+
+		else if(BuzzerType_uc == Short)
 		{
 			BuzzerStateInt_uc = Short;
 			BuzzerAmountInt_uc = BuzzerAmount_uc;
@@ -1032,13 +1119,13 @@ void Buzzer(unsigned char BuzzerAmount_uc,unsigned char BuzzerType_uc)
 
 		break;
 
-		case Continous:
+		case Continous: //Continous Sound
 
 			BuzzerPower_uc = 1;
 
 		break;
 
-		case Short:
+		case Short: // Short Sound
 
 			if(BuzzerAmountInt_uc > 0)
 			{
@@ -1067,12 +1154,12 @@ void Buzzer(unsigned char BuzzerAmount_uc,unsigned char BuzzerType_uc)
 			else if(BuzzerAmountInt_uc == 0)
 			{
 				BuzzerPower_uc = 0;
-				BuzzerStateInt_uc = Standby;
+				BuzzerStateInt_uc = BuzzerStateIntSave_uc;
 			}
 
 		break;
 
-		case Long:
+		case Long: // Long Sound
 
 			if(BuzzerAmountInt_uc > 0)
 			{
@@ -1101,7 +1188,7 @@ void Buzzer(unsigned char BuzzerAmount_uc,unsigned char BuzzerType_uc)
 			else if(BuzzerAmountInt_uc == 0)
 			{
 				BuzzerPower_uc = 0;
-				BuzzerStateInt_uc = Standby;
+				BuzzerStateInt_uc = BuzzerStateIntSave_uc;
 			}
 
 		break;

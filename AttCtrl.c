@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -96,7 +119,7 @@ volatile AttCtrlType_OutpSig	  OutpSig;
 AttCtrlType_InternSig InternSig;
 AttCtrlType_MotorGain MotorGain;
 unsigned int Stick_Gas_Comp_ui = 0;
-int16_t CmdYaw_si, CmdPitch_si, CmdRoll_si;
+int16_t CmdYaw_si;
 
 /*****************************************************************************/
 /*                             local variables                               */
@@ -155,14 +178,43 @@ void AttCtrl_CalcCtrlOutp(void)
 	}
 	else
 	{
+		//if GPS off, bad GPS RX or no EXO connected
+		if(Gps_Mode_uc == Off || GPS.GPSFix_uc < 3 || EXO_Connected_uc == 0)
+		{
+			//no GPS control is allowed
+			GPS_Pitch_si = 0;
+			GPS_Roll_si = 0;
+			GPS_Yaw_si = 0;
+		}
+
+
+		#define SetPoint_LIMIT 11832 //11832 = 65°
+		//---------------Roll--------------
 		InpSig.SetPointRoll_si  = 
 			FPL_fmuls8x8_16_(Stick_Roll_si, (uint8_t)Var[Variant_uc].ParaName.
 				P_FACTOR_STICK_ROPI_CONTROLLER_ui);
 
+		//add GPS roll command to the target angle of attitude control
+		InpSig.SetPointRoll_si+=GPS_Roll_si<<5; //max: 125*32~22° targetangle
+		
+		//Limit setpoint of ROLL to prevent too high steering input by pilot
+		BOUND(InpSig.SetPointRoll_si,SetPoint_LIMIT,-SetPoint_LIMIT);
+		//---------------Roll--------------
+
+
+		//--------------Pitch--------------
 		InpSig.SetPointPitch_si = 
 			FPL_fmuls8x8_16_(Stick_Pitch_si, (uint8_t)Var[Variant_uc].ParaName.
 				P_FACTOR_STICK_ROPI_CONTROLLER_ui);
+
+		//add GPS pitch command to the target angle of attitude control	
+		InpSig.SetPointPitch_si+=GPS_Pitch_si<<5; //max: 125*32~22° targetangle
+
+		//Limit setpoint of PITCH to prevent too high steering input by pilot
+		BOUND(InpSig.SetPointPitch_si,SetPoint_LIMIT,-SetPoint_LIMIT);
+		//--------------Pitch--------------
 	}
+
 
 	/* Target Yaw angle is always zero!									     */
 	InpSig.SetPointYaw_si   = 0; 
@@ -271,8 +323,7 @@ void AttCtrl_CalcCtrlOutp(void)
 	/*                       Calculate P- and D-portion                      */
 	/*************************************************************************/
 	
-	//#define PCmpnt_LIMIT 100
-	//#define DCmpnt_LIMIT 75
+	#define PCmpnt_LIMIT 125
 
 	/* --------------------------- Rollaxle -------------------------------- */
 
@@ -285,7 +336,7 @@ void AttCtrl_CalcCtrlOutp(void)
 			)
 		);
 	//limit P-portion
-	//BOUND(InternSig.PCmpntRoll_si,PCmpnt_LIMIT,-PCmpnt_LIMIT);
+	BOUND(InternSig.PCmpntRoll_si,PCmpnt_LIMIT,-PCmpnt_LIMIT);
 
 
 	InternSig.DCmpntRoll_si	= 
@@ -296,9 +347,6 @@ void AttCtrl_CalcCtrlOutp(void)
 				- InternSig.ErrorRollRate_si, (Poti.P_KD_ROLL_PITCH_ui << 3)
 			)
 		);
-	//limit D-portion
-	//BOUND(InternSig.DCmpntRoll_si,DCmpnt_LIMIT,-DCmpnt_LIMIT);
-
 	/* --------------------------- Pitchaxle ------------------------------- */
 
 	InternSig.PCmpntPitch_si = 
@@ -310,7 +358,7 @@ void AttCtrl_CalcCtrlOutp(void)
 			)
 		);
 	//limit P-portion
-	//BOUND(InternSig.PCmpntPitch_si,PCmpnt_LIMIT,-PCmpnt_LIMIT);
+	BOUND(InternSig.PCmpntPitch_si,PCmpnt_LIMIT,-PCmpnt_LIMIT);
 
 
 	InternSig.DCmpntPitch_si = 
@@ -321,9 +369,6 @@ void AttCtrl_CalcCtrlOutp(void)
 				- InternSig.ErrorPitchRate_si, (Poti.P_KD_ROLL_PITCH_ui << 3)
 			)
 		);
-	//limit D-portion
-	//BOUND(InternSig.DCmpntPitch_si,DCmpnt_LIMIT,-DCmpnt_LIMIT);
-
 	/* ----------------------------- Yawaxle ------------------------------- */
 
 	InternSig.PCmpntYaw_si = 
@@ -442,32 +487,6 @@ void AttCtrl_CalcCtrlOutp(void)
 		InternSig.PCmpntPitch_K1_si = 0;
 		InternSig.PCmpntRoll_K1_si = 0;
 	}
-  
-
-	/*************************************************************************/
-	/*           Set P-portion to zero under certain conditions              */
-	/*************************************************************************/
-
-	/* ----------------------------- Rolle --------------------------------- */
-		if (RollActiv_uc == 1)
-		{
-			InternSig.PCmpntRoll_si = 0;
-			//YYY
-	        /* Set yawangle to zero during loops to avoid turnback			 */
-        	InertSig_Gyro.Phi_sl[2] = 0;
-			/* ...for safety yaw-P-portion as well							 */
-		    InternSig.PCmpntYaw_si = 0;
-		}
-	/* ---------------------------- Looping -------------------------------- */
- 	    if (LoopActiv_uc == 1)
-		{
-	   	   	InternSig.PCmpntPitch_si = 0;
-			/* Set yawangle to zero during loops to avoid turnback			 */
-            //YYY
-			InertSig_Gyro.Phi_sl[2] = 0;
-		    /* ...for safety yaw-P-portion as well							 */
-			InternSig.PCmpntYaw_si = 0;
-      	}
 
 	/*************************************************************************/
 	/*             Compute control output: sum of P+D    	                 */
@@ -525,8 +544,8 @@ void AttCtrl_ExecMotorMixer(void)
 
 	if (MotorsOn_uc == 1)
 	{
-		if ((Stick_Throttle_ui < (uint8_t)Var[Variant_uc].ParaName.
-			P_MIN_THRO_CONTROLLER_ACTIVE_ui) && !RollActiv_uc && !LoopActiv_uc)
+		if (Stick_Throttle_ui < (uint8_t)Var[Variant_uc].ParaName.
+			P_MIN_THRO_CONTROLLER_ACTIVE_ui)
 		{
 			/*****************************************************************/
 			/*       		       AttCtrl not active	                     */
@@ -567,68 +586,35 @@ void AttCtrl_ExecMotorMixer(void)
 			LED_YELLOW_ON;
 
 			/*****************************************************************/
-			/*  Precalculation of motor target values out of radio signals   */
+			/* Calculation of motor yaw target values out of radio commando  */
 			/*****************************************************************/
 
-			/* Following calculation are used frequently					 */
-			/* --> continuously recalculation necessary						 */
+			CmdYaw_si =	((int16_t)(GPS_Yaw_si - Stick_Yaw_si)
+						*(uint8_t)Var[Variant_uc].ParaName.
+						P_FACTOR_STICK_YAW_DIRECT_ui)>>6;
 			
-			//if GPS off, bad GPS RX, in HeadingHold modus or no EXO connected
-			if(Gps_Mode_uc == Off || GPS.GPSFix_uc < 3 || Var[Variant_uc].
-				ParaName.FS_HEADING_HOLD_ui == 1 || EXO_Connected_uc == 0)
+			//JJJ: should avoid/reduce a change of altitude during yawing
+			if(CmdYaw_si > (Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui))
 			{
-				//no GPS control is allowed
-				GPS_Pitch_si = 0;
-				GPS_Roll_si = 0;
-				GPS_Yaw_si = 0;
+				CmdYaw_si = (Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui);
 			}
-
-			/* Yawing only allowed if no loop active, due to massive error	 */
-			/* occurancy due to missing Euler-equations						 */
-			if(LoopActiv_uc == 0 && RollActiv_uc == 0)
-			{
-				CmdYaw_si =	((int16_t)(GPS_Yaw_si - Stick_Yaw_si)
-							*(uint8_t)Var[Variant_uc].ParaName.
-							P_FACTOR_STICK_YAW_DIRECT_ui)>>6;
 			
-				//JJJ: should avoid/reduce a change of altitude during yawing
-				if(CmdYaw_si > (Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui))
-				{
-					CmdYaw_si = (Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui);
-				}
-
-				if(CmdYaw_si < -(Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui))
-				{
-					CmdYaw_si = -(Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui);
-				}
-
-				if(CmdYaw_si > ((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui))
-				{
-					CmdYaw_si = ((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui);
-				}
-
-				if(CmdYaw_si < -((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui))
-				{
-					CmdYaw_si = -((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui);
-				}
-				//JJJ
-			}
-			else CmdYaw_si = 0;
-
-			if(Var[Variant_uc].ParaName.FS_HEADING_HOLD_ui == 0)
+			if(CmdYaw_si < -(Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui))
 			{
-				CmdPitch_si = ((int16_t)Stick_Pitch_si
-							*(uint8_t)Var[Variant_uc].ParaName.
-							P_FACTOR_STICK_ROPI_DIRECT_ui)>>6;
-				CmdRoll_si = ((int16_t)Stick_Roll_si
-							*(uint8_t)Var[Variant_uc].ParaName.
-							P_FACTOR_STICK_ROPI_DIRECT_ui)>>6;
+				CmdYaw_si = -(Stick_Throttle_ui - (uint8_t)Var[Variant_uc].ParaName.P_MIN_THRO_ui);
 			}
-			else
+
+			if(CmdYaw_si > ((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui))
 			{
-				CmdPitch_si = 0;
-				CmdRoll_si = 0;
+				CmdYaw_si = ((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui);
 			}
+
+			if(CmdYaw_si < -((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui))
+			{
+				CmdYaw_si = -((uint8_t)Var[Variant_uc].ParaName.P_MAX_THRO_ui - Stick_Throttle_ui);
+			}
+			//JJJ
+
 
       		//limit Stick_Throttle to MAX_THRO_STICK
       		A_MIN_AB(Stick_Throttle_ui, 
@@ -665,8 +651,8 @@ void AttCtrl_ExecMotorMixer(void)
 			//calc the pitch, roll and yaw sum once, because they are needed
 			//several times
 			temp_throttle_sl = OutpSig.Throttle_si + Stick_Gas_Comp_ui + Stick_Throttle_ui;
-			temp_pitch_sl = OutpSig.Pitch_si + CmdPitch_si + (GPS_Pitch_si >> 1);
-			temp_roll_sl = OutpSig.Roll_si + CmdRoll_si + (GPS_Roll_si >> 1);
+			temp_pitch_sl = OutpSig.Pitch_si;
+			temp_roll_sl = OutpSig.Roll_si;
 			temp_yaw_sl = OutpSig.Yaw_si + CmdYaw_si;
 
 			for(counter_uc=0;counter_uc<P_MaxMotorAmount;counter_uc++)
@@ -682,7 +668,8 @@ void AttCtrl_ExecMotorMixer(void)
 				//"brake" motor in case of lower target rpm compared to the last cycle
 				if(temp_motor_sl < OutpSig.Motor_K1_si[counter_uc])
 				{
-					OutpSig.Motor_si[counter_uc] = (temp_motor_sl * 6)>>3; //*0,75
+					OutpSig.Motor_si[counter_uc]
+						=(temp_motor_sl*Var[Variant_uc].ParaName.P_VIRTUAL_MOTOR_BRAKE_ui)>>3;
 				}
 				else
 				{

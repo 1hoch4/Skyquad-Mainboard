@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -110,6 +133,7 @@ volatile unsigned char Counter_96ms_uc = 70;
 volatile unsigned char Variant_uc=0;
 
 unsigned char BootDelay_uc =0;
+unsigned char cnt_uc = 0;
 
 ParaUnion_t Var[P_MaxVariant];
 SW_VersionType EEPROM_Version;
@@ -434,14 +458,9 @@ void Parameter_init(void)
 	{
 		Var[iVarCnt].ParaName.P_STICK_HEADINGHOLD_THRESHOLD_ui=3;
 		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_CONTROLLER_ui=60;
-		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_DIRECT_ui =0;
 		Var[iVarCnt].ParaName.P_FACTOR_STICK_ROPI_HEADINGHOLD_ui =77;
 		Var[iVarCnt].ParaName.P_FACTOR_STICK_YAW_DIRECT_ui =90;
-		Var[iVarCnt].ParaName.P_STICK_YAW_THRESHOLD_ui =6; 
-		Var[iVarCnt].ParaName.P_LOOP_PITCH_ON_THRESHOLD_ui =90;
-		Var[iVarCnt].ParaName.P_LOOP_PITCH_OFF_HYST_ui =30;
-		Var[iVarCnt].ParaName.P_LOOP_ROLL_ON_THRESHOLD_ui =90;
-		Var[iVarCnt].ParaName.P_LOOP_ROLL_OFF_HYST_ui =30;
+		Var[iVarCnt].ParaName.P_STICK_YAW_THRESHOLD_ui =6;
 		Var[iVarCnt].ParaName.P_EMER_THRO_DURATION_ui =2500;
 		Var[iVarCnt].ParaName.P_MIN_THRO_ui =15;
 		Var[iVarCnt].ParaName.P_MAX_THRO_ui =255;
@@ -452,6 +471,7 @@ void Parameter_init(void)
 		Var[iVarCnt].ParaName.P_KD_ROLL_PITCH_ui=155;
 		Var[iVarCnt].ParaName.P_KP_YAW_ui=128;
 		Var[iVarCnt].ParaName.P_KD_YAW_ui=100;
+		Var[iVarCnt].ParaName.P_VIRTUAL_MOTOR_BRAKE_ui=8;
 		Var[iVarCnt].ParaName.P_CAMERACOMP_ON_OFF_ui=0;
 		Var[iVarCnt].ParaName.P_CAMERAPITCHCOMP_ON_OFF_ui=0;
 		Var[iVarCnt].ParaName.P_CAMERAROLLCOMP_ON_OFF_ui=0;
@@ -892,8 +912,9 @@ void tasktimer(void)
 		AttCtrl_ExecMotorMixer();
 		i2c_motor_send();
 		sendData();
-		EXO_DataTransfer();
 		Servo_Output();
+		EXO_DataTransfer();
+
 	}
 	/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
@@ -983,6 +1004,10 @@ void tasktimer(void)
 				Buzzer(4,Long);	//(4x long)
 			}
 		}
+
+		if(cnt_uc < 250) cnt_uc++;
+		if(cnt_uc >= 10) LED_BLUE_OFF;
+
 	}
 	/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 }

@@ -46,7 +46,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -363,50 +386,6 @@ void Radio_Signal_Check(void)
 		LED_RED_OFF;
 		Buzzer(0,ContinousOff);
 	}
-
-	/* check if roll is demanded. Just if allowed via function switch		 */
-	#if ((FS_LOOPING == FS_LOOP_ROLL) || (FS_LOOPING == FS_LOOP_PITCHROLL))
-
-		if ((Stick_Roll_si > (uint8_t)Var[Variant_uc].
-			   ParaName.P_LOOP_ROLL_ON_THRESHOLD_ui
-			 || Stick_Roll_si < -(uint8_t)Var[Variant_uc].ParaName.
-			   P_LOOP_ROLL_ON_THRESHOLD_ui) && SQinAir_ui)
-		{
-			RollActiv_uc = 1;
-		}
-
-		if (Stick_Roll_si <= ((uint8_t)Var[Variant_uc].
-			  ParaName.P_LOOP_ROLL_ON_THRESHOLD_ui 
-			- (uint8_t)Var[Variant_uc].ParaName.P_LOOP_ROLL_OFF_HYST_ui)
-			&& Stick_Roll_si >= (-(uint8_t)Var[Variant_uc].
-			  ParaName.P_LOOP_ROLL_ON_THRESHOLD_ui + (uint8_t)Var[Variant_uc].
-			  ParaName.P_LOOP_ROLL_OFF_HYST_ui))
-		{
-			RollActiv_uc = 0;
-		}
-	#endif
-
-	/* check if loop is demanded. Just if allowed via function switch		 */
-	#if ((FS_LOOPING == FS_LOOP_PITCH) || (FS_LOOPING == FS_LOOP_PITCHROLL))
-		
-		if ((Stick_Pitch_si > (uint8_t)Var[Variant_uc].
-			   ParaName.P_LOOP_PITCH_ON_THRESHOLD_ui
-			 || Stick_Pitch_si < -(uint8_t)Var[Variant_uc].ParaName.
-			    P_LOOP_PITCH_ON_THRESHOLD_ui) && SQinAir_ui)
-		{
-			LoopActiv_uc = 1;
-		}
-
-		if (Stick_Pitch_si <= ((uint8_t)Var[Variant_uc].
-			  ParaName.P_LOOP_PITCH_ON_THRESHOLD_ui 
-			- (uint8_t)Var[Variant_uc].ParaName.P_LOOP_PITCH_OFF_HYST_ui) 
-			&& Stick_Pitch_si >= (-(uint8_t)Var[Variant_uc].ParaName.
-			  P_LOOP_PITCH_ON_THRESHOLD_ui + (uint8_t)Var[Variant_uc].ParaName.
-			  P_LOOP_PITCH_OFF_HYST_ui))
-		{
-			LoopActiv_uc = 0;
-		}
-	#endif
 }
 
 

@@ -45,7 +45,30 @@ Funktion gegeben.
 -------------------------------------------------------------------------------
 ENGLISH:
 -------------------------------------------------------------------------------
-t.b.d.
+All rights to the entire project and all related files and information are reserved by 1hoch4 UG.
+This includes, without limitation, software published as source code.
+
+Use of hardware:
+Users are permitted to utilise the hardware for commercial purposes (e.g. aerial photography).
+However, 1hoch4 UG cannot be held responsible for any damage that arises from commercial use,
+as the product is an experimental hobby project in the beta phase. The hardware and software
+are therefore under continuous development and cannot be expressly authorised for professional uses.
+The prior consent of 1hoch4 UG is required for any commercial sale, utilisation for other purposes
+(including, without limitation, the population of unpopulated PCBs), or the combination of kits
+and/or circuit boards to create a marketable product.
+
+Use of software (source code):
+The software may only be used on hardware supplied by 1hoch4 UG. Use of all or part of the
+published source code is only permitted for private and non-commercial purposes. The written
+consent of 1hoch4 UG is required for any commercial usage or porting to different hardware.
+These terms and conditions/licence also apply to all private use of the source code (even in part),
+whether modified or unmodified, and the licence must be supplied with the software. In addition,
+the source must be clearly identified as 1hoch4. Users modify and use the source code at their own risk.
+
+1hoch4 UG assumes no liability whatsoever for any direct or indirect damage to persons and property.
+Because the 1hoch4 projects are experimental, we cannot guarantee that they are free of faults,
+complete or that they function correctly.
+
 
 
 
@@ -80,13 +103,13 @@ POSSIBILITY OF SUCH DAMAGE.
 // mainboard SW version
 //*****************************************************************************
 #define SW_MAJOR	5
-#define SW_MINOR	11
+#define SW_MINOR	17
 
 //*****************************************************************************
 // mainboard EEPROM version
 //*****************************************************************************
 #define EE_MAJOR	1
-#define EE_MINOR	8
+#define EE_MINOR	10
 
 //*****************************************************************************
 // global defines
@@ -129,8 +152,8 @@ typedef struct
 
 typedef union
 {
-	volatile unsigned int 	Int_ui[16];
-	volatile unsigned char 	Byte_uc[32];
+	volatile unsigned int 	Int_ui[21];
+	volatile unsigned char 	Byte_uc[42];
 }UART_RX_TX_DataUnion;
 
 typedef struct
@@ -174,19 +197,6 @@ via radio control.#
 //MIN:			#0#
 //MAX:			#75#
 /*---------------------------------------------------------------------------*/
-unsigned int P_FACTOR_STICK_ROPI_DIRECT_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Faktor zur direkten Beeinflussung der Motordrehzahlen über die Fernsteuerung
-mittels Roll/Nick.
-ENGLISH:
-factor for direct influence of the motor rpm via radio control roll/pitch.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#0#
-//MIN:			#0#
-//MAX:			#200#
-/*---------------------------------------------------------------------------*/
 unsigned int P_FACTOR_STICK_ROPI_HEADINGHOLD_ui;
 /*DESCRIPTION:
 #DEUTSCH:
@@ -225,53 +235,6 @@ Stick Yaw Threshold to lern new target angle.#
 //DEFAULT:		#6#
 //MIN:			#5#
 //MAX:			#15#
-/*---------------------------------------------------------------------------*/
-unsigned int P_LOOP_PITCH_ON_THRESHOLD_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Stickwert Nick, oberhalb dessen die P-Regelung ausgeschaltet wird.
-ENGLISH:
-Stick Pitch threshold, above the P-part of the controller is disabled.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#90#
-//MIN:			#70#
-//MAX:			#100#
-/*---------------------------------------------------------------------------*/
-unsigned int P_LOOP_PITCH_OFF_HYST_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Stickwert Nick, unterhalb dessen die P-Regelung wieder eingeschaltet wird.
-ENGLISH:
-Stick Pitch value, below the P-part of the controller is enabled again.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#30#
-//MIN:			#10#
-//MAX:			#40#
-/*---------------------------------------------------------------------------*/
-unsigned int P_LOOP_ROLL_ON_THRESHOLD_ui;
-/*DESCRIPTION:	#DEUTSCH:
-Stickwert Roll, oberhalb dessen die P-Regelung ausgeschaltet wird.
-ENGLISH:
-Stick Roll threshold, above the P-part of the controller is disabled.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#90#
-//MIN:			#70#
-//MAX:			#100#
-/*---------------------------------------------------------------------------*/
-unsigned int P_LOOP_ROLL_OFF_HYST_ui;
-/*DESCRIPTION:
-#DEUTSCH:
-Stickwert Roll, unterhalb dessen die P-Regelung wieder eingeschaltet wird.
-ENGLISH:
-Stick Roll value, below the P-part of the controller is enabled again.#
-*/
-//UNIT:			#-#
-//DEFAULT:		#30#
-//MIN:			#10#
-//MAX:			#40#
 /*---------------------------------------------------------------------------*/
 unsigned int P_EMER_THRO_DURATION_ui;
 /*DESCRIPTION:
@@ -392,6 +355,36 @@ D-Gain Yaw of attitude controller.#
 //DEFAULT:		#100#
 //MIN:			#0#
 //MAX:			#255#
+/*---------------------------------------------------------------------------*/
+unsigned int P_VIRTUAL_MOTOR_BRAKE_ui;
+/*DESCRIPTION:
+#DEUTSCH:
+Motoren deren Drehzahl reduziert werden sollen können durch den BL-Regler nicht
+aktiv gebremst werden. Eine Erhöhung bzw. Reduktion der Drehzahl passiert daher
+nicht symmetrisch im gleichen Masse. Dieser Effekt tritt besonders stark bei 
+schweren, trägen Propeller und/oder bei hohen Versorgungsspannungen (4s) auf.
+Um diesem Verhalten entgegen zu wirken wird eine Drehzahlreduktion 
+überproportional verstärkt, wodurch der Propeller schneller die Drehzahl
+reduziert ("ausrollt"). Dies erhöht die Ruhe im Flug erheblich!
+8 = 100% (Maßnahme deaktiviert),
+7 = 87,5% (mittlerer Effekt)
+6 = 75% (starker Effekt)
+ENGLISH:
+The rpm of a motor can´t be reducted actively, because BL-Controllers doesn´t
+have a brake functionality. Therefore increase and decrease of motor speed
+doesn´t happen symmetric. That happends particularly in combination with heavy
+props and/or higher voltage battery packs (4s). To cope with that issue a
+reduction of the rpm is done more extensively than an increase, which causes
+the propeller to reduce rpm quicker. That improves the flight performance
+significantly!
+8 = 100% (measure deactivated),
+7 = 87,5% (medium effect)
+6 = 75% (higher effect)#
+*/
+//UNIT:			#-#
+//DEFAULT:		#8#
+//MIN:			#6#
+//MAX:			#8#
 /*---------------------------------------------------------------------------*/
 unsigned int P_CAMERACOMP_ON_OFF_ui;
 /*DESCRIPTION:
@@ -799,6 +792,7 @@ extern unsigned int Temp_StatusRegister_ui;
 extern volatile unsigned char MaxVariant_uc;
 
 extern unsigned char BootDelay_uc;
+extern unsigned char cnt_uc;
 
 //Variables for EXO-Board data
 extern GPS_Struct GPS;
@@ -886,21 +880,6 @@ extern volatile unsigned char Buzzer_uc; // 0 = OFF; 1 = ON;
 #define FS_SERVOEXT			FS_SERVOEXT_OFF
 //to enable the sum signal on the servo ports for the servo extension
 //hardware.
-//*--------------------------------------------------------------------------*/
-
-
-//Loop
-//*--------------------------------------------------------------------------*/
-#define FS_LOOP_OFF 0
-// no Loops
-#define FS_LOOP_PITCH 1
-// Loop (Pitchaxle) is allowed
-#define FS_LOOP_ROLL 2
-// Roll (Rollaxle) is allowed
-#define FS_LOOP_PITCHROLL 3
-//Loop (Pitchaxle) and Roll (Rollaxle) is allowed
-#define FS_LOOPING				FS_LOOP_OFF
-//Loop-function Pitch- and/or Rollaxle
 //*--------------------------------------------------------------------------*/
 
 
